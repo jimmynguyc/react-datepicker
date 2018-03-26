@@ -45,6 +45,7 @@ import ShowTime from './examples/show_time'
 import ExcludeTimes from './examples/exclude_times'
 import ExcludeTimePeriod from './examples/exclude_time_period'
 import IncludeTimes from './examples/include_times'
+import InjectTimes from './examples/inject_times'
 import DontCloseOnSelect from './examples/dont_close_onSelect'
 import OpenByDefault from './examples/open_by_default'
 
@@ -71,6 +72,10 @@ export default class exampleComponents extends React.Component {
   {
     title: 'Include Times',
     component: <IncludeTimes />
+  },
+  {
+    title: 'Inject Specific Times',
+    component: <InjectTimes />
   },
   {
     title: 'Specific Time Range',
