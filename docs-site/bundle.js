@@ -6595,7 +6595,7 @@
 
       var _example_components2 = _interopRequireDefault(_example_components);
 
-      var _hero_example = __webpack_require__(390);
+      var _hero_example = __webpack_require__(391);
 
       var _hero_example2 = _interopRequireDefault(_hero_example);
 
@@ -6999,17 +6999,21 @@
 
       var _include_times2 = _interopRequireDefault(_include_times);
 
-      var _dont_close_onSelect = __webpack_require__(386);
+      var _inject_times = __webpack_require__(386);
+
+      var _inject_times2 = _interopRequireDefault(_inject_times);
+
+      var _dont_close_onSelect = __webpack_require__(387);
 
       var _dont_close_onSelect2 = _interopRequireDefault(_dont_close_onSelect);
 
-      var _open_by_default = __webpack_require__(387);
+      var _open_by_default = __webpack_require__(388);
 
       var _open_by_default2 = _interopRequireDefault(_open_by_default);
 
-      __webpack_require__(388);
-
       __webpack_require__(389);
+
+      __webpack_require__(390);
 
       function _interopRequireDefault(obj) {
         return obj && obj.__esModule ? obj : { default: obj };
@@ -7108,6 +7112,13 @@
                 title: "Include Times",
                 component: _react2.default.createElement(
                   _include_times2.default,
+                  null
+                )
+              },
+              {
+                title: "Inject Specific Times",
+                component: _react2.default.createElement(
+                  _inject_times2.default,
                   null
                 )
               },
@@ -7391,7 +7402,11 @@
               return _this.examples.map(function(example, index) {
                 return _react2.default.createElement(
                   _code_example_component2.default,
-                  { key: "example-" + index, id: index, title: example.title },
+                  {
+                    key: "example-" + index,
+                    id: index,
+                    title: example.title
+                  },
                   example.component
                 );
               });
@@ -26664,6 +26679,7 @@
                 highlightDates: _this.state.highlightDates,
                 includeDates: _this.props.includeDates,
                 includeTimes: _this.props.includeTimes,
+                injectTimes: _this.props.injectTimes,
                 inline: _this.props.inline,
                 peekNextMonth: _this.props.peekNextMonth,
                 showMonthDropdown: _this.props.showMonthDropdown,
@@ -26874,6 +26890,7 @@
         id: _propTypes2.default.string,
         includeDates: _propTypes2.default.array,
         includeTimes: _propTypes2.default.array,
+        injectTimes: _propTypes2.default.array,
         inline: _propTypes2.default.bool,
         isClearable: _propTypes2.default.bool,
         locale: _propTypes2.default.string,
@@ -27563,7 +27580,8 @@
                 showMonthYearDropdown: _this.props.showMonthYearDropdown,
                 showYearDropdown: _this.props.showYearDropdown,
                 withPortal: _this.props.withPortal,
-                monthRef: _this.state.monthContainer
+                monthRef: _this.state.monthContainer,
+                injectTimes: _this.props.injectTimes
               });
             }
           };
@@ -27661,6 +27679,7 @@
         highlightDates: _propTypes2.default.instanceOf(Map),
         includeDates: _propTypes2.default.array,
         includeTimes: _propTypes2.default.array,
+        injectTimes: _propTypes2.default.array,
         inline: _propTypes2.default.bool,
         locale: _propTypes2.default.string,
         maxDate: _propTypes2.default.object,
@@ -28906,6 +28925,7 @@
       exports.getEndOfWeek = getEndOfWeek;
       exports.getEndOfMonth = getEndOfMonth;
       exports.addMinutes = addMinutes;
+      exports.addHours = addHours;
       exports.addDays = addDays;
       exports.addWeeks = addWeeks;
       exports.addMonths = addMonths;
@@ -28941,6 +28961,7 @@
       exports.getEffectiveMinDate = getEffectiveMinDate;
       exports.getEffectiveMaxDate = getEffectiveMaxDate;
       exports.getHightLightDaysMap = getHightLightDaysMap;
+      exports.timesToInjectAfter = timesToInjectAfter;
 
       var _moment = __webpack_require__(209);
 
@@ -29162,6 +29183,10 @@
 
       function addMinutes(date, amount) {
         return add(date, amount, "minutes");
+      }
+
+      function addHours(date, amount) {
+        return add(date, amount, "hours");
       }
 
       function addDays(date, amount) {
@@ -29494,6 +29519,33 @@
         }
 
         return dateClasses;
+      }
+
+      function timesToInjectAfter(
+        startOfDay,
+        currentTime,
+        currentMultiplier,
+        intervals,
+        injectedTimes
+      ) {
+        var l = injectedTimes.length;
+        var times = [];
+        for (var i = 0; i < l; i++) {
+          var injectedTime = addMinutes(
+            addHours(cloneDate(startOfDay), getHour(injectedTimes[i])),
+            getMinute(injectedTimes[i])
+          );
+          var nextTime = addMinutes(
+            cloneDate(startOfDay),
+            (currentMultiplier + 1) * intervals
+          );
+
+          if (injectedTime.isBetween(currentTime, nextTime)) {
+            times.push(injectedTimes[i]);
+          }
+        }
+
+        return times;
       }
 
       /***/
@@ -49639,6 +49691,15 @@
               ) {
                 classes.push("react-datepicker__time-list-item--disabled");
               }
+              if (
+                _this.props.injectTimes &&
+                ((0, _date_utils.getHour)(time) * 60 +
+                  (0, _date_utils.getMinute)(time)) %
+                  _this.props.intervals !==
+                  0
+              ) {
+                classes.push("react-datepicker__time-list-item--injected");
+              }
 
               return classes.join(" ");
             }),
@@ -49655,13 +49716,28 @@
                 (0, _date_utils.newDate)()
               );
               var multiplier = 1440 / intervals;
+              var sortedInjectTimes =
+                _this.props.injectTimes &&
+                _this.props.injectTimes.sort(function(a, b) {
+                  return a - b;
+                });
               for (var i = 0; i < multiplier; i++) {
-                times.push(
-                  (0, _date_utils.addMinutes)(
-                    (0, _date_utils.cloneDate)(base),
-                    i * intervals
-                  )
+                var currentTime = (0, _date_utils.addMinutes)(
+                  (0, _date_utils.cloneDate)(base),
+                  i * intervals
                 );
+                times.push(currentTime);
+
+                if (sortedInjectTimes) {
+                  var timesToInject = (0, _date_utils.timesToInjectAfter)(
+                    base,
+                    currentTime,
+                    i,
+                    intervals,
+                    sortedInjectTimes
+                  );
+                  times = times.concat(timesToInject);
+                }
               }
 
               return times.map(function(time, i) {
@@ -49769,7 +49845,8 @@
         maxTime: _propTypes2.default.object,
         excludeTimes: _propTypes2.default.array,
         monthRef: _propTypes2.default.object,
-        timeCaption: _propTypes2.default.string
+        timeCaption: _propTypes2.default.string,
+        injectTimes: _propTypes2.default.array
       };
       exports.default = Time;
 
@@ -59685,6 +59762,154 @@
             : (subClass.__proto__ = superClass);
       }
 
+      var InjectTimes = (function(_React$Component) {
+        _inherits(InjectTimes, _React$Component);
+
+        function InjectTimes() {
+          var _temp, _this, _ret;
+
+          _classCallCheck(this, InjectTimes);
+
+          for (
+            var _len = arguments.length, args = Array(_len), _key = 0;
+            _key < _len;
+            _key++
+          ) {
+            args[_key] = arguments[_key];
+          }
+
+          return (
+            (_ret = ((_temp = ((_this = _possibleConstructorReturn(
+              this,
+              _React$Component.call.apply(_React$Component, [this].concat(args))
+            )),
+            _this)),
+            (_this.state = {
+              startDate: (0, _moment2.default)()
+                .hours(16)
+                .minutes(30)
+            }),
+            (_this.handleChange = function(date) {
+              _this.setState({
+                startDate: date
+              });
+            }),
+            _temp)),
+            _possibleConstructorReturn(_this, _ret)
+          );
+        }
+
+        InjectTimes.prototype.render = function render() {
+          return _react2.default.createElement(
+            "div",
+            { className: "row" },
+            _react2.default.createElement(
+              "pre",
+              { className: "column example__code" },
+              _react2.default.createElement(
+                "code",
+                { className: "jsx" },
+                "\n<DatePicker\n    selected={this.state.startDate}\n    onChange={this.handleChange}",
+                _react2.default.createElement("br", null),
+                _react2.default.createElement(
+                  "strong",
+                  null,
+                  '    showTimeSelect\n    timeFormat="HH:mm"\n    injectTimes={[\n      moment().hours(0).minutes(1),\n      moment().hours(12).minutes(5),\n      moment().hours(23).minutes(59)\n    ]}\n    dateFormat="LLL"\n/>\n'
+                )
+              )
+            ),
+            _react2.default.createElement(
+              "div",
+              { className: "column" },
+              _react2.default.createElement(_reactDatepicker2.default, {
+                selected: this.state.startDate,
+                onChange: this.handleChange,
+                showTimeSelect: true,
+                timeFormat: "HH:mm",
+                injectTimes: [
+                  (0, _moment2.default)()
+                    .hours(0)
+                    .minutes(1),
+                  (0, _moment2.default)()
+                    .hours(12)
+                    .minutes(5),
+                  (0, _moment2.default)()
+                    .hours(23)
+                    .minutes(59)
+                ],
+                dateFormat: "LLL"
+              })
+            )
+          );
+        };
+
+        return InjectTimes;
+      })(_react2.default.Component);
+
+      exports.default = InjectTimes;
+
+      /***/
+    },
+    /* 387 */
+    /***/ function(module, exports, __webpack_require__) {
+      "use strict";
+
+      exports.__esModule = true;
+
+      var _react = __webpack_require__(2);
+
+      var _react2 = _interopRequireDefault(_react);
+
+      var _reactDatepicker = __webpack_require__(198);
+
+      var _reactDatepicker2 = _interopRequireDefault(_reactDatepicker);
+
+      var _moment = __webpack_require__(209);
+
+      var _moment2 = _interopRequireDefault(_moment);
+
+      function _interopRequireDefault(obj) {
+        return obj && obj.__esModule ? obj : { default: obj };
+      }
+
+      function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+          throw new TypeError("Cannot call a class as a function");
+        }
+      }
+
+      function _possibleConstructorReturn(self, call) {
+        if (!self) {
+          throw new ReferenceError(
+            "this hasn't been initialised - super() hasn't been called"
+          );
+        }
+        return call && (typeof call === "object" || typeof call === "function")
+          ? call
+          : self;
+      }
+
+      function _inherits(subClass, superClass) {
+        if (typeof superClass !== "function" && superClass !== null) {
+          throw new TypeError(
+            "Super expression must either be null or a function, not " +
+              typeof superClass
+          );
+        }
+        subClass.prototype = Object.create(superClass && superClass.prototype, {
+          constructor: {
+            value: subClass,
+            enumerable: false,
+            writable: true,
+            configurable: true
+          }
+        });
+        if (superClass)
+          Object.setPrototypeOf
+            ? Object.setPrototypeOf(subClass, superClass)
+            : (subClass.__proto__ = superClass);
+      }
+
       var DontCloseOnSelect = (function(_React$Component) {
         _inherits(DontCloseOnSelect, _React$Component);
 
@@ -59740,7 +59965,7 @@
 
       /***/
     },
-    /* 387 */
+    /* 388 */
     /***/ function(module, exports, __webpack_require__) {
       "use strict";
 
@@ -59855,14 +60080,14 @@
 
       /***/
     },
-    /* 388 */
+    /* 389 */
     /***/ function(module, exports) {
       // removed by extract-text-webpack-plugin
       /***/
     },
-    /* 389 */
-    388,
     /* 390 */
+    389,
+    /* 391 */
     /***/ function(module, exports, __webpack_require__) {
       "use strict";
 
